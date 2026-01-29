@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Pool Agreement Flow</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="robots" content="index,follow">
+  <meta name="generator" content="GrapesJS Studio">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Fraunces:opsz,wght@9..144,600;9..144,700&amp;display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="./style.css">
+  </head>
+  <body class="gjs-t-body body-root"><header class="header"><div class="header-container"><div class="brand-area"><div class="brand-icon"><img alt="Brand icon" src="https://api.iconify.design/lucide-shield-check.svg?color=%230a66c2" class="brand-icon-graphic"/></div><div class="brand-text"><span class="brand-name">TrustPools</span><span class="brand-tagline">Pool Agreement Flow</span></div></div><nav class="primary-navigation"><a href="#" class="gjs-t-link nav-link">Overview</a><a href="#" class="gjs-t-link nav-link">Create Pool</a><a href="#" class="gjs-t-link nav-link">Constitution</a><a href="#" class="gjs-t-link nav-link">Sign &amp; Submit</a><button type="button" class="gjs-t-button primary-cta"><span>Start Flow</span></button></nav></div></header><main class="main-content"><section class="hero-section"><div class="hero-container"><div class="hero-copy"><h1 class="gjs-t-h1 hero-title">Trust Score &amp; Pool Agreement Flow</h1><p class="hero-subtitle">Build transparent, fair, and enforceable savings pools. Our Trust Score guides participation, risk, and payout order—backed by a South African-compliant Pool Constitution and rules enforced via secure backend integrations.</p><div class="hero-actions"><button type="button" class="gjs-t-button hero-cta-button"><span>Create New Pool</span></button><a href="#constitution" class="hero-secondary-link">Review Constitution</a></div><div class="hero-trustscore-highlights"><img alt="Shield icon" src="https://api.iconify.design/lucide-badge-check.svg?color=%230b5db3" class="hero-icon"/><ul class="hero-highlights-list"><li>Transparent Trust Score: contribution consistency, verification status, dispute history</li><li>Automated rule enforcement: missed payments, penalties, lockouts</li><li>Digital signing with audit trail stored securely</li></ul></div></div><div class="gjs-t-border hero-visual-card"><img alt="People saving together" src="https://app.grapesjs.com/api/assets/random-image?query=%22team%20saving%20money%22&amp;w=800&amp;h=400" class="hero-visual-image"/><div class="hero-visual-content"><h3 class="gjs-t-h2 hero-visual-title">Trust Score Snapshot</h3><div class="trustscore-grid"><div class="trustscore-metric"><div class="trustscore-metric-label">Consistency</div><div class="trustscore-metric-value">92%</div></div><div class="trustscore-metric"><div class="trustscore-metric-label">Verification</div><div class="trustscore-metric-value">KYC ✓</div></div><div class="trustscore-metric"><div class="trustscore-metric-label">Disputes</div><div class="trustscore-metric-value">Low</div></div></div><p class="trustscore-note">Trust Scores evolve with behavior and verified data sources to protect pool integrity.</p></div></div></div></section><section class="intro-trustscore-section"><div class="intro-container"><div class="intro-text-block"><h2 class="gjs-t-h2 intro-title">Trust Score Logic Overview</h2><p class="intro-paragraph">The Trust Score quantifies member reliability using verifiable signals. It influences eligibility, payout order, and penalty tiers. Inputs are weighted to produce a normalized score between 0 and 100.</p><ul class="intro-bullet-list"><li>Contribution consistency (on-time payments vs. misses)</li><li>Identity &amp; income verification (KYC, bank linking)</li><li>Dispute frequency and resolution outcomes</li><li>Pool tenure and peer endorsements</li></ul></div><div class="gjs-t-border interfaces-card"><div class="interfaces-header"><img alt="Code icon" src="https://api.iconify.design/lucide-code-2.svg?color=%230f172a" class="interfaces-icon"/><h3 class="interfaces-title">TypeScript Interfaces (Trust Score)</h3></div><pre class="code-block"><code>export type VerificationLevel = 'none' | 'basic' | 'kyc' | 'kyc_bank';
+
+export interface ContributionRecord {
+  poolId: string;
+  memberId: string;
+  dueDate: string;       // ISO date
+  paidDate?: string;     // ISO date
+  amount: number;        // cents
+  status: 'on_time' | 'late' | 'missed';
+}
+
+export interface DisputeRecord {
+  id: string;
+  poolId: string;
+  memberId: string;
+  createdAt: string;     // ISO
+  resolvedAt?: string;   // ISO
+  severity: 'low' | 'medium' | 'high';
+  outcome: 'member_at_fault' | 'member_not_at_fault' | 'mutual';
+}
+
+export interface TrustInputs {
+  memberId: string;
+  verification: VerificationLevel;
+  contributions: ContributionRecord[];
+  disputes: DisputeRecord[];
+  tenureMonths: number;
+  endorsements: { fromMemberId: string; weight: number }[];
+}
+
+export interface TrustScoreResult {
+  memberId: string;
+  score: number; // 0..100
+  components: {
+    consistency: number;
+    verification: number;
+    disputes: number;
+    tenure: number;
+    endorsements: number;
+  };
+  updatedAt: string;
+}
+
+export interface TrustPolicy {
+  minScoreToJoin: number;
+  payoutOrder: 'descending' | 'ascending' | 'random_weighted';
+  penaltyTiers: { threshold: number; penaltyPct: number }[];
+}</code></pre></div></div></section><section class="create-pool-section"><div class="create-pool-header"><h2 class="gjs-t-h2 create-pool-title">Create a New Pool</h2><p class="create-pool-subtitle">Define your pool’s parameters and invite members. Contributions, types, and initial member list help initialize the agreement and Trust Score baselines.</p></div><form method="get" id="poolForm" novalidate="" class="gjs-t-border create-pool-form"><div class="form-field-group"><label for="poolName" class="form-label">Pool Name</label><input type="text" id="poolName" name="poolName" placeholder="e.g., Sunrise Savings Circle" class="form-input"/></div><div class="form-field-group"><label for="poolType" class="form-label">Pool Type</label><select type="text" id="poolType" name="poolType" class="form-select"><option value="stokvel">Stokvel (rotational savings)</option><option value="contribution">Contribution-based fund</option><option value="investment">Investment club</option></select></div><div class="form-field-group"><label for="contributionAmount" class="form-label">Contribution Amount (ZAR)</label><input type="number" id="contributionAmount" name="contributionAmount" min="0" step="0.01" placeholder="e.g., 500.00" class="form-input"/></div><div class="members-field-group"><label class="form-label">Initial Members</label><div class="members-input-container"><div id="memberTags" class="members-tags-container"></div><div class="members-input-actions"><input type="email" id="memberInput" placeholder="Add member email and press Enter" class="members-input"/><button type="button" id="addMemberBtn" class="gjs-t-button add-member-button"><span>Add</span></button></div></div><p class="members-helper">Use valid emails. Members receive invitations to review and sign the constitution.</p></div><div class="form-footer"><div class="form-meta"><div class="meta-item"><img alt="Clock icon" src="https://api.iconify.design/lucide-clock.svg?color=%230f172a" class="meta-icon"/><span class="meta-text">Estimated setup: 3–5 minutes</span></div><div class="meta-item"><img alt="Users icon" src="https://api.iconify.design/lucide-users.svg?color=%230f172a" class="meta-icon"/><span class="meta-text">Min. 3 members</span></div></div><button type="button" id="createPoolBtn" class="gjs-t-button form-submit-button"><span>Save &amp; Continue</span></button></div></form></section><section id="constitution" class="constitution-section"><div class="constitution-container"><div class="constitution-intro"><h2 class="gjs-t-h2 constitution-title">South African-Compliant Pool Constitution</h2><p class="constitution-subtitle">This template aligns with common stokvel practices and South African legal principles. Customize as needed and ensure all members review before signing.</p><div class="constitution-actions"><button type="button" id="downloadConstitutionBtn" class="gjs-t-button download-constitution-button"><span>Download PDF</span></button><a href="#sign" class="jump-to-sign-link">Jump to Sign</a></div></div><aside class="gjs-t-border supabase-schema-card"><div class="supabase-schema-header"><img alt="Database icon" src="https://api.iconify.design/lucide-database.svg?color=%230f172a" class="db-icon"/><h3 class="supabase-schema-title">Supabase Table Schema</h3></div><pre class="supabase-schema-code"><code>-- Signed pool constitutions storage
+create table if not exists pool_constitutions (
+  id uuid primary key default gen_random_uuid(),
+  pool_id uuid not null,
+  version int not null default 1,
+  title text not null,
+  body text not null, -- markdown/plain
+  jurisdiction text not null default 'ZA',
+  created_by uuid not null,
+  created_at timestamptz not null default now(),
+  signed_at timestamptz,
+  signed_by uuid,
+  signature text, -- typed full name or e-sign payload
+  signature_hash text, -- hash of (body + signer + timestamp)
+  audit trail jsonb, -- { events: [...], policy: {...} }
+  status text not null default 'draft', -- draft | awaiting_signatures | fully_signed | superseded
+  constraint fk_pool foreign key (pool_id) references pools(id) on delete cascade,
+  constraint fk_creator foreign key (created_by) references auth.users(id) on delete set null,
+  constraint fk_signer foreign key (signed_by) references auth.users(id) on delete set null
+);
+
+create index on pool_constitutions (pool_id);
+create index on pool_constitutions (status);
+create index on pool_constitutions using gin (audit trail);</code></pre></aside></div><div class="gjs-t-border constitution-template-card"><div class="constitution-template-header"><div class="constitution-template-title-row"><img alt="File icon" src="https://api.iconify.design/lucide-file-text.svg?color=%230f172a" class="document-icon"/><h3 class="constitution-template-title">Template: TrustPools Constitution (ZA)</h3></div><span class="constitution-version-label">Version 1.0</span></div><div class="constitution-template-body"><div class="constitution-section-block"><h4 class="constitution-section-title">1. Name &amp; Purpose</h4><p class="constitution-section-paragraph">This collective savings pool (“the Pool”) is established under South African law to promote mutual savings, financial inclusion, and community support among its members.</p></div><div class="constitution-section-block"><h4 class="constitution-section-title">2. Membership</h4><ul class="constitution-section-list"><li>Eligibility requires valid identification and acceptance of this Constitution.</li><li>Members must maintain a minimum Trust Score as set by Pool Policy.</li><li>Membership changes require majority approval of current members.</li></ul></div><div class="constitution-section-block"><h4 class="constitution-section-title">3. Contributions &amp; Schedule</h4><p class="constitution-section-paragraph">Members shall contribute the agreed amount at defined intervals. Late or missed payments may incur penalties or temporary suspension per Trust Policy.</p></div><div class="constitution-section-block"><h4 class="constitution-section-title">4. Payouts</h4><p class="constitution-section-paragraph">Payouts are allocated per agreed order, informed by Trust Scores and participation history, ensuring fairness and liquidity.</p></div><div class="constitution-section-block"><h4 class="constitution-section-title">5. Governance</h4><ul class="constitution-section-list"><li>Decisions are passed by majority vote unless otherwise specified.</li><li>Disputes are resolved through an internal process, with escalation paths if needed.</li><li>Policy updates require proper notice and recorded approval.</li></ul></div><div class="constitution-section-block"><h4 class="constitution-section-title">6. Compliance &amp; Records</h4><p class="constitution-section-paragraph">The Pool adheres to relevant South African laws, including consumer protection and AML/KYC requirements. All transactions and signatures are recorded with audit trails.</p></div><div class="constitution-section-block"><h4 class="constitution-section-title">7. Termination</h4><p class="constitution-section-paragraph">The Pool may be dissolved by majority decision. Remaining funds are distributed fairly, and records are retained as required.</p></div><div class="constitution-section-block"><h4 class="constitution-section-title">8. Acceptance</h4><p class="constitution-section-paragraph">By signing, members affirm they have read, understood, and agree to abide by this Constitution and associated Trust Policy.</p></div></div></div></section><section id="sign" class="signing-section"><div class="gjs-t-border signing-card"><div class="signing-header"><img alt="Signature icon" src="https://api.iconify.design/lucide-pencil-line.svg?color=%230f172a" class="signing-icon"/><h3 class="signing-title">Review &amp; Sign Constitution</h3></div><div class="signing-body"><div class="signing-left-column"><div class="acknowledgement-row"><span class="custom-checkbox-wrapper"><input type="checkbox" id="agreeCheckbox" aria-label="Agree to constitution" class="peer agree-checkbox"/><span class="peer-checked:opacity-100 checkbox-tick"><img alt="Tick" src="https://api.iconify.design/lucide-check.svg?color=%23ffffff" class="tick-icon"/></span></span><label for="agreeCheckbox" class="agree-label">I have read and agree to the Pool Constitution and Trust Policy.</label></div><div class="signature-inputs"><div><label for="signatureName" class="signature-label">Typed Full Name</label><input type="text" id="signatureName" placeholder="e.g., Thandiwe M." class="signature-input"/></div><div><label for="signingDate" class="date-label">Signing Date</label><input type="date" id="signingDate" class="date-input"/></div></div><div class="signature-actions"><button type="button" id="signSubmitBtn" class="gjs-t-button sign-submit-button"><span>Sign &amp; Submit</span></button><button type="button" id="saveDraftBtn" class="save-draft-button"><span>Save Draft</span></button></div><p class="signature-note">Your signature creates a tamper-evident hash and is stored with an audit trail in Supabase.</p></div><div class="gjs-t-border signing-right-column"><h4 class="signing-preview-title">Submission Preview</h4><div class="signing-preview-grid"><div class="preview-item"><div class="preview-label">Pool Name</div><div id="previewPoolName" class="preview-value">—</div></div><div class="preview-item"><div class="preview-label">Pool Type</div><div id="previewPoolType" class="preview-value">—</div></div><div class="preview-item"><div class="preview-label">Contribution</div><div id="previewContribution" class="preview-value">—</div></div><div class="preview-item"><div class="preview-label">Members</div><div id="previewMembers" class="preview-value">—</div></div><div class="preview-item"><div class="preview-label">Signature</div><div id="previewSignature" class="preview-value">—</div></div></div><div class="audit-preview"><img alt="Hash icon" src="https://api.iconify.design/lucide-hash.svg?color=%230f172a" class="audit-icon"/><div class="audit-text">Signature hash and audit trail generated upon submission.</div></div></div></div></div></section><section class="backend-integration-section"><div class="backend-header"><h2 class="gjs-t-h2 backend-title">Backend Enforcement &amp; Transaction Processing</h2><p class="backend-subtitle">Integration points ensure rules are enforced and funds flow reliably. Connect services to validate Trust Scores, schedule contributions, and manage payouts.</p></div><div class="backend-grid"><div class="gjs-t-border backend-card"><div class="backend-card-header"><img alt="Workflow icon" src="https://api.iconify.design/lucide-flowchart.svg?color=%230f172a" class="backend-icon"/><h3 class="backend-card-title">Rule Enforcement</h3></div><ul class="backend-card-list"><li>Validate min Trust Score at join</li><li>Apply penalties on missed payments</li><li>Lock payouts if arrears exceed threshold</li></ul></div><div class="gjs-t-border backend-card"><div class="backend-card-header"><img alt="Credit card icon" src="https://api.iconify.design/lucide-credit-card.svg?color=%230f172a" class="backend-icon"/><h3 class="backend-card-title">Transactions</h3></div><ul class="backend-card-list"><li>Debit contributions via payment gateway</li><li>Reconcile bank statements to update Trust Scores</li><li>Trigger payouts per agreed schedule</li></ul></div><div class="gjs-t-border backend-card"><div class="backend-card-header"><img alt="Server icon" src="https://api.iconify.design/lucide-server.svg?color=%230f172a" class="backend-icon"/><h3 class="backend-card-title">API Endpoints</h3></div><div class="backend-api-block"><div>POST /api/pools            # create pool</div><div>POST /api/constitutions     # save draft/sign</div><div>POST /api/trust/compute     # compute Trust Score</div><div>POST /api/transactions/debit</div><div>POST /api/transactions/payout</div></div></div></div><div class="gjs-t-border integration-demo-card"><div class="integration-demo-header"><img alt="Play icon" src="https://api.iconify.design/lucide-play-circle.svg?color=%230f172a" class="integration-demo-icon"/><h3 class="integration-demo-title">Demo: Submit Flow</h3></div><div class="integration-demo-copy">The button below simulates a full submission: pool creation, Trust Score computation, constitution signing, and transaction scheduling.</div><div class="integration-demo-actions"><button type="button" id="simulateFlowBtn" class="gjs-t-button simulate-button"><span>Simulate End-to-End</span></button><div id="simulateStatus" class="simulate-status">Idle</div></div></div></section><section class="faq-section"><div class="gjs-t-border faq-card"><div class="faq-header"><img alt="Help icon" src="https://api.iconify.design/lucide-help-circle.svg?color=%230f172a" class="faq-icon"/><h3 class="faq-title">Frequently Asked Questions</h3></div><div class="faq-grid"><div class="faq-item"><div class="faq-question">How is the Trust Score updated?</div><div class="faq-answer">Automatically after each contribution cycle, dispute resolution, and verification changes.</div></div><div class="faq-item"><div class="faq-question">Can we customize penalties?</div><div class="faq-answer">Yes. Penalty tiers are configurable per Pool Policy and reflected in the constitution.</div></div></div></div></section></main><footer class="footer"><div class="footer-container"><div class="footer-brand"><img alt="Shield icon" src="https://api.iconify.design/lucide-shield.svg?color=%230f172a" class="footer-brand-icon"/><span class="footer-brand-name">TrustPools</span></div><div class="footer-text">© 2026 TrustPools. All rights reserved.</div></div></footer><script>
+const members = [];
+const memberInput = document.getElementById('memberInput');
+const addMemberBtn = document.getElementById('addMemberBtn');
+const memberTags = document.getElementById('memberTags');
+const createPoolBtn = document.getElementById('createPoolBtn');
+const poolNameEl = document.getElementById('poolName');
+const poolTypeEl = document.getElementById('poolType');
+const contributionEl = document.getElementById('contributionAmount');
+const previewPoolName = document.getElementById('previewPoolName');
+const previewPoolType = document.getElementById('previewPoolType');
+const previewContribution = document.getElementById('previewContribution');
+const previewMembers = document.getElementById('previewMembers');
+const signatureNameEl = document.getElementById('signatureName');
+const signingDateEl = document.getElementById('signingDate');
+const previewSignature = document.getElementById('previewSignature');
+const agreeCheckbox = document.getElementById('agreeCheckbox');
+const signSubmitBtn = document.getElementById('signSubmitBtn');
+const saveDraftBtn = document.getElementById('saveDraftBtn');
+const simulateBtn = document.getElementById('simulateFlowBtn');
+const simulateStatus = document.getElementById('simulateStatus');
+
+function renderMembers() {
+  memberTags.innerHTML = '';
+  members.forEach((email, idx) => {
+    const tag = document.createElement('span');
+    tag.setAttribute('data-gjs-name','Member Tag');
+    tag.className = 'inline-flex items-center gap-2 bg-blue-50 text-blue-800 border border-blue-200 rounded-full px-3 py-1 text-sm';
+    tag.innerHTML = `<span data-gjs-name="Member Tag Text">${email}</span>`;
+    const removeBtn = document.createElement('button');
+    removeBtn.setAttribute('data-gjs-name','Member Tag Remove');
+    removeBtn.className = 'ml-1 rounded-full border border-blue-300 hover:bg-blue-100 focus:outline-2 focus:outline-blue-300 px-2 py-1 text-xs';
+    removeBtn.textContent = '×';
+    removeBtn.addEventListener('click', () => {
+      members.splice(idx, 1);
+      renderMembers();
+      updatePreview();
+    });
+    tag.appendChild(removeBtn);
+    memberTags.appendChild(tag);
+  });
+}
+
+function addMember(email) {
+  const trimmed = (email || '').trim();
+  if (!trimmed) return;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+    alert('Please enter a valid email.');
+    return;
+  }
+  if (!members.includes(trimmed)) {
+    members.push(trimmed);
+    renderMembers();
+    updatePreview();
+  }
+  memberInput.value = '';
+}
+
+memberInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    addMember(memberInput.value);
+  }
+});
+addMemberBtn.addEventListener('click', () => addMember(memberInput.value));
+
+function updatePreview() {
+  previewPoolName.textContent = poolNameEl.value || '—';
+  previewPoolType.textContent = poolTypeEl.value || '—';
+  previewContribution.textContent = contributionEl.value ? `ZAR ${Number(contributionEl.value).toFixed(2)}` : '—';
+  previewMembers.textContent = members.length ? members.join(', ') : '—';
+  previewSignature.textContent = signatureNameEl.value ? `${signatureNameEl.value} (${signingDateEl.value || 'date'})` : '—';
+}
+[poolNameEl, poolTypeEl, contributionEl, signatureNameEl, signingDateEl].forEach(el => el.addEventListener('input', updatePreview));
+
+createPoolBtn.addEventListener('click', async () => {
+  if (!poolNameEl.value || !poolTypeEl.value || !contributionEl.value || members.length < 3) {
+    alert('Please fill all fields and add at least 3 members.');
+    return;
+  }
+  updatePreview();
+  alert('Pool draft saved. Proceed to review the constitution.');
+});
+
+saveDraftBtn.addEventListener('click', async () => {
+  alert('Draft saved. You can return to sign later.');
+});
+
+signSubmitBtn.addEventListener('click', async () => {
+  if (!agreeCheckbox.checked) {
+    alert('Please agree to the constitution.');
+    return;
+  }
+  if (!signatureNameEl.value || !signingDateEl.value) {
+    alert('Please provide your name and signing date.');
+    return;
+  }
+  const bodyText = Array.from(document.querySelectorAll('[data-gjs-name="Constitution Section Paragraph"], [data-gjs-name="Constitution Section List"]')).map(n => n.textContent).join('\n');
+  const signer = signatureNameEl.value;
+  const ts = new Date(signingDateEl.value).toISOString();
+  const hashSource = bodyText + '|' + signer + '|' + ts;
+  const signatureHash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(hashSource)).then(buf => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join(''));
+  alert('Constitution signed. Hash: ' + signatureHash.slice(0, 10) + '...');
+});
+
+simulateBtn.addEventListener('click', async () => {
+  simulateStatus.textContent = 'Creating pool...';
+  await new Promise(r => setTimeout(r, 600));
+  simulateStatus.textContent = 'Computing Trust Scores...';
+  await new Promise(r => setTimeout(r, 600));
+  simulateStatus.textContent = 'Saving constitution...';
+  await new Promise(r => setTimeout(r, 600));
+  simulateStatus.textContent = 'Scheduling transactions...';
+  await new Promise(r => setTimeout(r, 600));
+  simulateStatus.textContent = 'Done';
+});
+</script><section class="ts-interfaces-section"><div class="ts-interfaces-container gjs-t-border"><div class="ts-interfaces-header"><div class="ts-title-row"><img src="https://api.iconify.design/lucide-code-2.svg?color=%230f172a" alt="Code icon" class="ts-icon"/><h2 class="gjs-t-h2 ts-title">TypeScript Interfaces for Trust Score and Pool Constitution</h2></div><button type="button" aria-label="Copy TypeScript interfaces" class="gjs-t-button ts-copy-btn"><span>Copy</span></button></div><p class="ts-intro">These interfaces define the core data models for Trust Score computation, South African-compliant Pool Constitutions, and integration across front-end and backend services.</p><pre class="code-block ts-code"><code>
+// Trust Score inputs and result
+
+export type VerificationLevel = 'none' | 'basic' | 'kyc' | 'kyc_bank';
+
+export interface ContributionRecord {
+  poolId: string;
+  memberId: string;
+  dueDate: string;            // ISO date
+  paidDate?: string;          // ISO date
+  amount: number;             // cents
+  status: 'on_time' | 'late' | 'missed';
+}
+
+export interface DisputeRecord {
+  id: string;
+  poolId: string;
+  memberId: string;
+  createdAt: string;          // ISO
+  resolvedAt?: string;        // ISO
+  severity: 'low' | 'medium' | 'high';
+  outcome: 'member_at_fault' | 'member_not_at_fault' | 'mutual';
+}
+
+export interface TrustInputs {
+  memberId: string;
+  verification: VerificationLevel;
+  contributions: ContributionRecord[];
+  disputes: DisputeRecord[];
+  tenureMonths: number;
+  endorsements: { fromMemberId: string; weight: number }[];
+}
+
+export interface TrustMetricComponents {
+  reliability: number;            // weighted composite of on-time ratio
+  participation: number;          // attendance / engagement signals
+  contributionConsistency: number;// streaks, lateness, misses
+  verificationLevel: number;      // scaled by VerificationLevel
+  disputeImpact: number;          // negative score from dispute outcomes
+  tenureMonths: number;           // capped normalization
+  endorsementsScore: number;      // peer weights normalized
+}
+
+export interface TrustScore {
+  memberId: string;
+  score: number;                  // 0..100 normalized
+  components: TrustMetricComponents;
+  updatedAt: string;              // ISO
+}
+
+export interface TrustPolicy {
+  minScoreToJoin: number;
+  payoutOrder: 'descending' | 'ascending' | 'random_weighted';
+  penaltyTiers: { threshold: number; penaltyPct: number }[];
+  arrearsLockThresholdPct: number; // lock payouts if arrears exceed this %
+}
+
+// Pool Constitution and signatures (ZA-compliant template)
+
+export type ConstitutionStatus =
+  | 'draft'
+  | 'awaiting_signatures'
+  | 'fully_signed'
+  | 'superseded';
+
+export interface ConstitutionSignature {
+  memberId: string;
+  fullName: string;
+  signedAt: string;             // ISO
+  signatureHash: string;        // SHA-256(body + signer + timestamp)
+  auditEventId?: string;        // link to audit trail
+}
+
+export interface AuditEvent {
+  id: string;
+  type:
+    | 'created'
+    | 'policy_updated'
+    | 'signature_added'
+    | 'status_changed'
+    | 'hash_verified';
+  actorId?: string;
+  createdAt: string;            // ISO
+  metadata?: Record<string, unknown="">;
+}
+
+export interface PoolConstitution {
+  id: string;
+  poolId: string;
+  version: number;
+  title: string;
+  body: string;                 // markdown/plain text of the constitution
+  jurisdiction: 'ZA';
+  createdBy: string;            // user id
+  createdAt: string;            // ISO
+  status: ConstitutionStatus;
+  policy: TrustPolicy;          // in-force policy snapshot
+  signatures: ConstitutionSignature[];
+  auditTrail: AuditEvent[];
+  supersededById?: string;      // link to newer version
+}
+
+// Minimal pool creation form model (front-end)
+
+export type PoolType = 'stokvel' | 'contribution' | 'investment';
+
+export interface CreatePoolForm {
+  poolName: string;
+  poolType: PoolType;
+  contributionAmountZAR: number;
+  initialMembers: string[];     // emails
+}
+
+// Backend endpoints contracts (simplified)
+
+export interface CreatePoolRequest {
+  form: CreatePoolForm;
+}
+
+export interface CreatePoolResponse {
+  poolId: string;
+  message: string;
+}
+
+export interface SaveConstitutionRequest {
+  poolId: string;
+  constitution: Omit&lt;PoolConstitution, 'id' | 'createdAt' | 'status'&gt;;
+}
+
+export interface SaveConstitutionResponse {
+  constitutionId: string;
+  status: ConstitutionStatus;
+}
+
+export interface ComputeTrustRequest {
+  poolId: string;
+  members: TrustInputs[];
+}
+
+export interface ComputeTrustResponse {
+  results: TrustScore[];
+}
+
+export interface DebitContributionRequest {
+  poolId: string;
+  cycleDate: string;            // ISO
+}
+
+export interface DebitContributionResponse {
+  success: boolean;
+  debitsProcessed: number;
+  failures: { memberId: string; reason: string }[];
+}
+
+export interface PayoutRequest {
+  poolId: string;
+  cycleDate: string;            // ISO
+}
+
+export interface PayoutResponse {
+  success: boolean;
+  payoutsProcessed: number;
+  lockedMembers: string[];      // blocked by arrears/low score
+}
+</string,></code></pre><div class="ts-footer"><div class="ts-meta"><img src="https://api.iconify.design/lucide-file-code.svg?color=%230f172a" alt="File code icon" class="ts-meta-icon"/><span class="ts-meta-text">Interfaces power the Pool Agreement Flow, Trust Score, and ZA constitution storage.</span></div><a href="./index.html" class="gjs-t-link ts-link">Return to Pool Agreement Flow</a></div></div></section><section class="sa-constitution-template-section"><div class="sa-container sa-card"><div class="sa-header"><div class="sa-title-row"><img src="https://api.iconify.design/lucide-file-text.svg?color=%230f172a" alt="Document icon" class="sa-icon"/><h2 class="gjs-t-h2">South African-Compliant Pool Constitution Template</h2></div><div class="sa-actions"><button type="button" id="saCopyConstitutionBtn" class="gjs-t-button sa-copy-btn"><span>Copy Draft</span></button><button type="button" id="saDownloadConstitutionBtn" class="gjs-t-button sa-copy-btn"><span>Download</span></button></div></div><p class="sa-subtitle">Review the constitution, create your pool, and sign with a tamper-evident hash. The draft aligns with common stokvel practices and South African legal principles.</p><div class="sa-grid"><div class="sa-left"><article id="saConstitutionBody" class="sa-section-block"><h3 class="sa-section-title">1. Purpose &amp; Objectives</h3><p class="sa-section-paragraph">This collective savings pool (“the Pool”) is established under South African law to promote mutual savings, financial inclusion, and community support among its members. The Pool aims to encourage disciplined contributions, fair payouts, and transparent governance.</p><h3 class="sa-section-title">2. Membership Eligibility &amp; Obligations</h3><ul class="sa-section-list"><li>Eligibility requires valid identification and acceptance of this Constitution and Trust Policy.</li><li>Members must maintain a minimum Trust Score as set by the Pool Policy.</li><li>Members shall provide accurate information and promptly update changes to contact and banking details.</li><li>Membership changes require majority approval of current members and recorded updates to the audit trail.</li></ul><h3 class="sa-section-title">3. Contribution Rules &amp; Schedules</h3><p class="sa-section-paragraph">Members shall contribute the agreed amount at defined intervals. Late or missed payments may incur penalties or temporary suspension per Trust Policy. Contributions are reconciled against bank statements or gateway reports to ensure accuracy.</p><h3 class="sa-section-title">4. Governance &amp; Decision-Making</h3><ul class="sa-section-list"><li>Decisions are passed by majority vote unless otherwise specified for special resolutions.</li><li>Payout order is informed by Trust Scores, participation history, and agreed rotational schedules.</li><li>Policy updates require proper notice, recorded approval, and versioned constitution storage.</li></ul><h3 class="sa-section-title">5. Dispute Resolution</h3><p class="sa-section-paragraph">Disputes are resolved through an internal process that records severity, outcome, and resolution. Escalation to external mediation may occur if internal resolution fails. Dispute outcomes may affect Trust Scores per the Trust Policy.</p><h3 class="sa-section-title">6. Compliance</h3><p class="sa-section-paragraph">The Pool adheres to relevant South African laws, including consumer protection and AML/KYC requirements. All transactions and signatures are recorded with audit trails. Members consent to verification procedures necessary for compliance.</p><h3 class="sa-section-title">7. Termination</h3><p class="sa-section-paragraph">The Pool may be dissolved by majority decision. Remaining funds are distributed equitably after settling liabilities. Records are retained as required by law and accessible for audit purposes.</p><h3 class="sa-section-title">8. Acceptance</h3><p class="sa-section-paragraph">By signing, members affirm they have read, understood, and agree to abide by this Constitution and associated Trust Policy. Signatures are stored with a tamper-evident hash and audit trail.</p></article><section class="sa-backend"><div class="sa-backend-header"><img src="https://api.iconify.design/lucide-server.svg?color=%230f172a" alt="Server icon" class="sa-icon"/><div class="sa-backend-title">Backend Enforcement &amp; Transactions</div></div><ul class="sa-backend-list"><li>Enforce minimum Trust Score at join and prior to payouts.</li><li>Apply penalties on missed or late payments; lock payouts if arrears exceed threshold.</li><li>Schedule contribution debits via gateway; reconcile statements to update Trust Scores.</li></ul><div class="sa-endpoints"><div>POST /api/pools — create pool</div><div>POST /api/constitutions — save draft/sign</div><div>POST /api/trust/compute — compute Trust Score</div><div>POST /api/transactions/debit — process contributions</div><div>POST /api/transactions/payout — process payouts</div></div></section></div><div class="sa-right"><section class="sa-card"><div class="sa-title-row" id="ijzyvf"><img src="https://api.iconify.design/lucide-code-2.svg?color=%230f172a" alt="Code icon" class="sa-icon"/><h3 class="sa-section-title">TypeScript Interfaces (Trust Score &amp; Constitution)</h3></div><pre id="saTsCode" class="sa-code"><code>
+// Trust Score inputs and result
+export type VerificationLevel = 'none' | 'basic' | 'kyc' | 'kyc_bank';
+
+export interface ContributionRecord {
+  poolId: string;
+  memberId: string;
+  dueDate: string;       // ISO date
+  paidDate?: string;     // ISO date
+  amount: number;        // cents
+  status: 'on_time' | 'late' | 'missed';
+}
+
+export interface DisputeRecord {
+  id: string;
+  poolId: string;
+  memberId: string;
+  createdAt: string;     // ISO
+  resolvedAt?: string;   // ISO
+  severity: 'low' | 'medium' | 'high';
+  outcome: 'member_at_fault' | 'member_not_at_fault' | 'mutual';
+}
+
+export interface TrustInputs {
+  memberId: string;
+  verification: VerificationLevel;
+  contributions: ContributionRecord[];
+  disputes: DisputeRecord[];
+  tenureMonths: number;
+  endorsements: { fromMemberId: string; weight: number }[];
+}
+
+export interface TrustScoreResult {
+  memberId: string;
+  score: number; // 0..100
+  components: {
+    consistency: number;
+    verification: number;
+    disputes: number;
+    tenure: number;
+    endorsements: number;
+  };
+  updatedAt: string;
+}
+
+export interface TrustPolicy {
+  minScoreToJoin: number;
+  payoutOrder: 'descending' | 'ascending' | 'random_weighted';
+  penaltyTiers: { threshold: number; penaltyPct: number }[];
+  arrearsLockThresholdPct: number;
+}
+
+// Constitution &amp; signatures
+export type ConstitutionStatus = 'draft' | 'awaiting_signatures' | 'fully_signed' | 'superseded';
+
+export interface ConstitutionSignature {
+  memberId: string;
+  fullName: string;
+  signedAt: string;      // ISO
+  signatureHash: string; // SHA-256(body + signer + timestamp)
+  auditEventId?: string;
+}
+
+export interface AuditEvent {
+  id: string;
+  type: 'created' | 'policy_updated' | 'signature_added' | 'status_changed' | 'hash_verified';
+  actorId?: string;
+  createdAt: string;     // ISO
+  metadata?: Record<string, unknown="">;
+}
+
+export interface PoolConstitution {
+  id: string;
+  poolId: string;
+  version: number;
+  title: string;
+  body: string;          // markdown/plain
+  jurisdiction: 'ZA';
+  createdBy: string;
+  createdAt: string;     // ISO
+  status: ConstitutionStatus;
+  policy: TrustPolicy;
+  signatures: ConstitutionSignature[];
+  auditTrail: AuditEvent[];
+  supersededById?: string;
+}
+</string,></code></pre><div class="sa-actions" id="id4524"><button type="button" id="saCopyTsBtn" class="gjs-t-button sa-copy-btn"><span>Copy Interfaces</span></button></div></section><section class="sa-card"><div class="sa-title-row" id="ip03uk"><img src="https://api.iconify.design/lucide-database.svg?color=%230f172a" alt="Database icon" class="sa-icon"/><h3 class="sa-section-title">Supabase Table Schema</h3></div><pre id="saSqlCode" class="sa-code"><code>
+-- Signed pool constitutions storage
+create table if not exists pool_constitutions (
+  id uuid primary key default gen_random_uuid(),
+  pool_id uuid not null,
+  version int not null default 1,
+  title text not null,
+  body text not null, -- markdown/plain
+  jurisdiction text not null default 'ZA',
+  created_by uuid not null,
+  created_at timestamptz not null default now(),
+  signed_at timestamptz,
+  signed_by uuid,
+  signature text, -- typed full name or e-sign payload
+  signature_hash text, -- hash of (body + signer + timestamp)
+  audit_trail jsonb, -- { events: [...], policy: {...} }
+  status text not null default 'draft', -- draft | awaiting_signatures | fully_signed | superseded
+  constraint fk_pool foreign key (pool_id) references pools(id) on delete cascade,
+  constraint fk_creator foreign key (created_by) references auth.users(id) on delete set null,
+  constraint fk_signer foreign key (signed_by) references auth.users(id) on delete set null
+);
+
+create index on pool_constitutions (pool_id);
+create index on pool_constitutions (status);
+create index on pool_constitutions using gin (audit_trail);
+</code></pre><div class="sa-actions" id="ir94ws"><button type="button" id="saCopySqlBtn" class="gjs-t-button sa-copy-btn"><span>Copy Schema</span></button></div></section></div></div><section id="saCreatePoolForm" novalidate="" class="sa-form"><div class="sa-field"><label for="saPoolName">Pool Name</label><input type="text" id="saPoolName" placeholder="e.g., Sunrise Savings Circle" class="sa-input"/></div><div class="sa-field"><label for="saPoolType">Pool Type</label><select type="text" id="saPoolType" class="sa-select"><option value="stokvel">Stokvel (rotational savings)</option><option value="contribution">Contribution-based fund</option><option value="investment">Investment club</option></select></div><div class="sa-field"><label for="saContribution">Contribution Amount (ZAR)</label><input type="number" id="saContribution" min="0" step="0.01" placeholder="e.g., 500.00" class="sa-input"/></div><div class="sa-members"><label>Initial Members</label><div class="sa-members-wrap"><div id="saMemberTags" class="sa-tags"></div><div class="sa-member-actions"><input type="email" id="saMemberInput" placeholder="Add member email and press Enter" class="sa-input"/><button type="button" id="saAddMemberBtn" class="gjs-t-button sa-copy-btn"><span>Add</span></button></div></div><p class="sa-helper">Use valid emails. Members receive invitations to review and sign the constitution.</p></div><div class="sa-form-footer"><div class="sa-meta"><div class="sa-meta-item"><img src="https://api.iconify.design/lucide-clock.svg?color=%230f172a" alt="Clock icon" class="sa-icon"/><span class="sa-meta-text">Estimated setup: 3–5 minutes</span></div><div class="sa-meta-item"><img src="https://api.iconify.design/lucide-users.svg?color=%230f172a" alt="Users icon" class="sa-icon"/><span class="sa-meta-text">Min. 3 members</span></div></div><button type="button" id="saCreatePoolBtn" class="gjs-t-button sa-copy-btn"><span>Save &amp; Continue</span></button></div></section><section class="sa-sign-card" id="ima46n"><div class="sa-sign-header"><img src="https://api.iconify.design/lucide-pencil-line.svg?color=%230f172a" alt="Signature icon" class="sa-icon"/><h3 class="sa-section-title">Review &amp; Sign Constitution</h3></div><div class="sa-sign-body"><div class="sa-sign-left"><div class="sa-ack-row"><input type="checkbox" id="saAgree" aria-label="Agree to constitution" class="sa-checkbox"/><label for="saAgree" class="sa-section-paragraph">I have read and agree to the Pool Constitution and Trust Policy.</label></div><div class="sa-sign-grid"><div><label for="saSignatureName" class="sa-sign-label">Typed Full Name</label><input type="text" id="saSignatureName" placeholder="e.g., Thandiwe M." class="sa-input"/></div><div><label for="saSigningDate" class="sa-sign-label">Signing Date</label><input type="date" id="saSigningDate" class="sa-input"/></div></div><div class="sa-sign-actions"><button type="button" id="saSignSubmitBtn" class="gjs-t-button sa-copy-btn"><span>Sign &amp; Submit</span></button><button type="button" id="saSaveDraftBtn" class="gjs-t-button sa-copy-btn"><span>Save Draft</span></button></div><p class="sa-sign-note">Your signature creates a tamper-evident hash and is stored with an audit trail in Supabase.</p></div><div class="sa-sign-right"><div class="sa-preview-title">Submission Preview</div><div class="sa-preview-grid"><div class="sa-preview-item"><div class="sa-preview-label">Pool Name</div><div id="saPreviewPoolName" class="sa-preview-value">—</div></div><div class="sa-preview-item"><div class="sa-preview-label">Pool Type</div><div id="saPreviewPoolType" class="sa-preview-value">—</div></div><div class="sa-preview-item"><div class="sa-preview-label">Contribution</div><div id="saPreviewContribution" class="sa-preview-value">—</div></div><div class="sa-preview-item"><div class="sa-preview-label">Members</div><div id="saPreviewMembers" class="sa-preview-value">—</div></div><div class="sa-preview-item"><div class="sa-preview-label">Signature</div><div id="saPreviewSignature" class="sa-preview-value">—</div></div></div><div class="sa-audit"><img src="https://api.iconify.design/lucide-hash.svg?color=%230f172a" alt="Hash icon" class="sa-icon"/><div class="sa-meta-text">Signature hash and audit trail generated upon submission.</div></div></div></div></section><section class="sa-card" id="is1rqi"><div class="sa-title-row" id="iqqouv"><img src="https://api.iconify.design/lucide-play-circle.svg?color=%230f172a" alt="Play icon" class="sa-icon"/><h3 class="sa-section-title">Demo: Submit Flow</h3></div><p class="sa-section-paragraph">Simulate an end-to-end flow: pool creation, Trust Score computation, constitution signing, and transaction scheduling.</p><div class="sa-actions" id="i5ejki"><button type="button" id="saSimulateBtn" class="gjs-t-button sa-copy-btn"><span>Simulate End-to-End</span></button><div id="saSimulateStatus" class="sa-meta-text">Idle</div></div></section><div class="sa-actions" id="i35w09"><a href="./index.html" class="gjs-t-link">Return to Pool Agreement Flow</a><div class="sa-meta-item"><img src="https://api.iconify.design/lucide-shield-check.svg?color=%230f172a" alt="Shield icon" class="sa-icon"/><span class="sa-meta-text">TrustPools • ZA-compliant template</span></div></div></div><script>
+    (function () {
+      const memberInput = document.getElementById('saMemberInput');
+      const addMemberBtn = document.getElementById('saAddMemberBtn');
+      const memberTags = document.getElementById('saMemberTags');
+      const members = [];
+
+      const poolNameEl = document.getElementById('saPoolName');
+      const poolTypeEl = document.getElementById('saPoolType');
+      const contributionEl = document.getElementById('saContribution');
+
+      const previewPoolName = document.getElementById('saPreviewPoolName');
+      const previewPoolType = document.getElementById('saPreviewPoolType');
+      const previewContribution = document.getElementById('saPreviewContribution');
+      const previewMembers = document.getElementById('saPreviewMembers');
+      const previewSignature = document.getElementById('saPreviewSignature');
+
+      const signatureNameEl = document.getElementById('saSignatureName');
+      const signingDateEl = document.getElementById('saSigningDate');
+      const agreeCheckbox = document.getElementById('saAgree');
+
+      const createPoolBtn = document.getElementById('saCreatePoolBtn');
+      const saveDraftBtn = document.getElementById('saSaveDraftBtn');
+      const signSubmitBtn = document.getElementById('saSignSubmitBtn');
+
+      const simulateBtn = document.getElementById('saSimulateBtn');
+      const simulateStatus = document.getElementById('saSimulateStatus');
+
+      const constitutionBody = document.getElementById('saConstitutionBody');
+      const copyConstitutionBtn = document.getElementById('saCopyConstitutionBtn');
+      const downloadConstitutionBtn = document.getElementById('saDownloadConstitutionBtn');
+
+      const tsCodeEl = document.getElementById('saTsCode');
+      const sqlCodeEl = document.getElementById('saSqlCode');
+      const copyTsBtn = document.getElementById('saCopyTsBtn');
+      const copySqlBtn = document.getElementById('saCopySqlBtn');
+
+      function updatePreview() {
+        previewPoolName.textContent = poolNameEl.value || '—';
+        previewPoolType.textContent = poolTypeEl.value || '—';
+        previewContribution.textContent = contributionEl.value ? 'ZAR ' + Number(contributionEl.value).toFixed(2) : '—';
+        previewMembers.textContent = members.length ? members.join(', ') : '—';
+        previewSignature.textContent = signatureNameEl.value ? (signatureNameEl.value + ' (' + (signingDateEl.value || 'date') + ')') : '—';
+      }
+
+      function renderMembers() {
+        memberTags.innerHTML = '';
+        members.forEach((email, idx) => {
+          const tag = document.createElement('span');
+          tag.className = 'sa-tag';
+          tag.innerHTML = '<span>' + email + '</span>';
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'sa-tag-remove';
+          removeBtn.type = 'button';
+          removeBtn.textContent = '×';
+          removeBtn.addEventListener('click', () => {
+            members.splice(idx, 1);
+            renderMembers();
+            updatePreview();
+          });
+          tag.appendChild(removeBtn);
+          memberTags.appendChild(tag);
+        });
+      }
+
+      function addMember(email) {
+        const trimmed = (email || '').trim();
+        if (!trimmed) return;
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+          alert('Please enter a valid email.');
+          return;
+        }
+        if (!members.includes(trimmed)) {
+          members.push(trimmed);
+          renderMembers();
+          updatePreview();
+        }
+        memberInput.value = '';
+      }
+
+      memberInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          addMember(memberInput.value);
+        }
+      });
+      addMemberBtn.addEventListener('click', () => addMember(memberInput.value));
+
+      [poolNameEl, poolTypeEl, contributionEl, signatureNameEl, signingDateEl].forEach(el => {
+        el.addEventListener('input', updatePreview);
+      });
+
+      createPoolBtn.addEventListener('click', () => {
+        if (!poolNameEl.value || !poolTypeEl.value || !contributionEl.value || members.length < 3) {
+          alert('Please fill all fields and add at least 3 members.');
+          return;
+        }
+        updatePreview();
+        alert('Pool draft saved. Proceed to review the constitution.');
+      });
+
+      saveDraftBtn.addEventListener('click', () => {
+        alert('Draft saved. You can return to sign later.');
+      });
+
+      async function computeSignatureHash() {
+        const textParts = [];
+        constitutionBody.querySelectorAll('h3, p, ul li').forEach(n => textParts.push(n.textContent));
+        const bodyText = textParts.join('\n');
+        const signer = signatureNameEl.value;
+        const ts = new Date(signingDateEl.value).toISOString();
+        const source = bodyText + '|' + signer + '|' + ts;
+        const enc = new TextEncoder().encode(source);
+        const buf = await crypto.subtle.digest('SHA-256', enc);
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+      }
+
+      signSubmitBtn.addEventListener('click', async () => {
+        if (!agreeCheckbox.checked) {
+          alert('Please agree to the constitution.');
+          return;
+        }
+        if (!signatureNameEl.value || !signingDateEl.value) {
+          alert('Please provide your name and signing date.');
+          return;
+        }
+        try {
+          const hash = await computeSignatureHash();
+          alert('Constitution signed. Hash: ' + hash.slice(0, 10) + '...');
+        } catch (e) {
+          alert('Failed to generate signature hash.');
+        }
+      });
+
+      simulateBtn.addEventListener('click', async () => {
+        simulateStatus.textContent = 'Creating pool...';
+        await new Promise(r => setTimeout(r, 600));
+        simulateStatus.textContent = 'Computing Trust Scores...';
+        await new Promise(r => setTimeout(r, 600));
+        simulateStatus.textContent = 'Saving constitution...';
+        await new Promise(r => setTimeout(r, 600));
+        simulateStatus.textContent = 'Scheduling transactions...';
+        await new Promise(r => setTimeout(r, 600));
+        simulateStatus.textContent = 'Done';
+      });
+
+      copyConstitutionBtn.addEventListener('click', async () => {
+        try {
+          const textParts = [];
+          constitutionBody.querySelectorAll('h3, p, ul li').forEach(n => textParts.push(n.textContent));
+          const text = textParts.join('\n');
+          await navigator.clipboard.writeText(text);
+          const original = copyConstitutionBtn.textContent;
+          copyConstitutionBtn.textContent = 'Copied!';
+          setTimeout(() => { copyConstitutionBtn.textContent = original; }, 1200);
+        } catch {
+          alert('Copy failed. Please select and copy manually.');
+        }
+      });
+
+      downloadConstitutionBtn.addEventListener('click', () => {
+        const blob = new Blob([constitutionBody.innerText], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'TrustPools_Constitution_ZA.txt';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      });
+
+      copyTsBtn.addEventListener('click', async () => {
+        try {
+          const text = tsCodeEl.textContent || '';
+          await navigator.clipboard.writeText(text);
+          const original = copyTsBtn.textContent;
+          copyTsBtn.textContent = 'Copied!';
+          setTimeout(() => { copyTsBtn.textContent = original; }, 1200);
+        } catch {
+          alert('Copy failed. Please select and copy manually.');
+        }
+      });
+
+      copySqlBtn.addEventListener('click', async () => {
+        try {
+          const text = sqlCodeEl.textContent || '';
+          await navigator.clipboard.writeText(text);
+          const original = copySqlBtn.textContent;
+          copySqlBtn.textContent = 'Copied!';
+          setTimeout(() => { copySqlBtn.textContent = original; }, 1200);
+        } catch {
+          alert('Copy failed. Please select and copy manually.');
+        }
+      });
+
+      updatePreview();
+    })();
+  </script></section><section class="st-schema-section"><div class="st-schema-container gjs-t-border"><div class="st-schema-header"><div class="st-title-row"><img src="https://api.iconify.design/lucide-database.svg?color=%230f172a" alt="Database icon" class="st-icon"/><h2 class="gjs-t-h2">Supabase Table Schema for Signed Pool Constitutions</h2></div><button type="button" aria-label="Copy SQL schema" id="stCopyBtn" class="gjs-t-button st-copy-btn">Copy Schema</button></div><p class="st-subtitle">Store signed constitutions with links to pools and signers, signature timestamps, and embedded Trust Score data for enforcement and audits.</p><pre class="st-code"><code id="stSqlCode">
+-- Table: signed_pool_constitutions
+-- Purpose: Store signed Pool Constitutions with signer details and Trust Score snapshot
+
+create table if not exists signed_pool_constitutions (
+  id uuid primary key default gen_random_uuid(),
+  pool_id uuid not null,
+  constitution_text text not null,        -- full constitution body at time of signing
+  signer_id uuid not null,                -- auth.users.id
+  signature_date timestamptz not null,    -- when the member signed
+  trust_score jsonb not null default '{}'::jsonb, -- snapshot of computed Trust Score
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint fk_pool foreign key (pool_id) references pools(id) on delete cascade,
+  constraint fk_signer foreign key (signer_id) references auth.users(id) on delete set null
+);
+
+-- Indexes for efficient lookups
+create index if not exists idx_spc_pool on signed_pool_constitutions (pool_id);
+create index if not exists idx_spc_signer on signed_pool_constitutions (signer_id);
+create index if not exists idx_spc_trustscore on signed_pool_constitutions using gin (trust_score);
+
+-- Maintain updated_at timestamp on row updates
+create or replace function set_updated_at() returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
+
+drop trigger if exists trg_spc_updated_at on signed_pool_constitutions;
+create trigger trg_spc_updated_at
+before update on signed_pool_constitutions
+for each row execute function set_updated_at();
+    </code></pre><div class="st-footer"><div class="st-meta"><img src="https://api.iconify.design/lucide-file-code.svg?color=%230f172a" alt="Code file icon" class="st-meta-icon"/><span class="st-meta-text">Schema supports backend storage and retrieval of signed constitutions and Trust Score snapshots.</span></div><a href="./index.html" class="gjs-t-link">Return to Pool Agreement Flow</a></div></div><script>
+    (function(){
+      const btn = document.getElementById('stCopyBtn');
+      const codeEl = document.getElementById('stSqlCode');
+      if (!btn || !codeEl) return;
+      btn.addEventListener('click', async () => {
+        try {
+          const text = (codeEl.textContent || '').trim();
+          await navigator.clipboard.writeText(text);
+          const original = btn.textContent;
+          btn.textContent = 'Copied!';
+          setTimeout(() => { btn.textContent = original; }, 1200);
+        } catch {
+          alert('Copy failed. Please select and copy manually.');
+        }
+      });
+    })();
+  </script></section><section id="pool-agreement-component" class="agreement-flow-section gjs-t-border"><div class="af-form-footer"><div class="af-meta"><div class="af-meta-item"><img src="https://api.iconify.design/lucide-clock.svg?color=%230f172a" alt="Clock" class="af-icon"/><span class="af-meta-text">Setup time: 3–5 minutes</span></div><div class="af-meta-item"><img src="https://api.iconify.design/lucide-users.svg?color=%230f172a" alt="Users" class="af-icon"/><span class="af-meta-text">Min. 3 members</span></div></div><button type="button" id="afSaveBtn" class="gjs-t-button"><span>Save &amp; Continue</span></button></div><div role="status" aria-live="polite" class="notice notice-info" id="i6j6yj"><div class="notice-row"><img alt="Info" src="https://api.iconify.design/lucide-info.svg?color=%230b5db3" class="notice-icon"/><div data-js="af-dev-notes">Backend-connected flow: creates pool, validates Trust Scores, saves constitution drafts/signatures, and schedules contributions. Status and errors appear here.</div></div></div></section><script>
+(function(){
+  const btn = document.querySelector('.ts-copy-btn');
+  const codeEl = document.querySelector('.ts-code code');
+  if (!btn || !codeEl) return;
+  btn.addEventListener('click', async () => {
+    try {
+      const text = codeEl.textContent || '';
+      await navigator.clipboard.writeText(text);
+      const original = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = original; }, 1200);
+    } catch (e) {
+      alert('Copy failed. Please select and copy manually.');
+    }
+  });
+})();
+</script></body>
+</html>
